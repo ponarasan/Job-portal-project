@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Arasan Hire — Job Portal</title>
+<link rel="stylesheet" href="styles.css?v=7" />
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <nav id="nav" aria-label="Menu">
+      <button data-view="jobs" class="active" id="nav-jobs">Jobs</button>
+      <button data-view="companies" id="nav-companies">Companies</button>
+      <button data-view="dashboard" id="nav-dashboard">My Applications</button>
+    </nav>
+    <div class="brand"><span class="logo">A</span> Arasan Hire</div>
+    <div class="header-actions">
+      <span class="rolepill" id="role-pill">guest</span>
+      <button data-view="profile" id="nav-profile">Profile</button>
+      <button data-view="auth" id="nav-auth">Login</button>
+    </div>
+  </div>
+  <div class="rolebar" id="role-bar">Browse jobs as a guest. Log in as a job seeker to apply, or as a recruiter to hire.</div>
+</header>
+
+<main>
+  <!-- ============ JOBS ============ -->
+  <section id="view-jobs" class="view active">
+    <div class="hero" id="hero-seeker">
+      <div>
+        <span class="eyebrow">Talent marketplace</span>
+        <h1>Find work that fits you</h1>
+        <p>Search by keyword, filter by location and type. Open a card for details, then apply.</p>
+      </div>
+      <div class="hero-stats" id="jobs-stats"></div>
+    </div>
+    <div class="hero recruiter-hero" id="hero-recruiter" style="display:none">
+      <div>
+        <span class="eyebrow">Hiring suite</span>
+        <h1>Hire your next teammate</h1>
+        <p>Publish jobs, review applicants by company or job, and move them from applied to hired.</p>
+        <div class="row"><button class="primary" onclick="show('dashboard')">Post a job</button>
+        <button class="ghost" onclick="show('companies')">Manage companies</button></div>
+      </div>
+      <div class="hero-stats" id="jobs-stats-r"></div>
+    </div>
+    <div class="card toolbar">
+      <div class="toolbar-title">Search and filter <span class="muted">GET /jobs</span></div>
+      <div class="filters">
+        <input id="f-search" placeholder="Keyword (title / description)" onkeydown="if(event.key==='Enter')loadJobs()" />
+        <input id="f-location" placeholder="Location" onkeydown="if(event.key==='Enter')loadJobs()" />
+        <select id="f-type">
+          <option value="">All types</option>
+          <option value="full_time">Full-time</option>
+          <option value="part_time">Part-time</option>
+          <option value="contract">Contract</option>
+          <option value="internship">Internship</option>
+          <option value="remote">Remote</option>
+        </select>
+        <input id="f-company" type="number" placeholder="Company ID" />
+        <button class="primary" onclick="loadJobs()">Search</button>
+        <button class="ghost" onclick="clearFilters()">Clear</button>
+      </div>
+    </div>
+    <div id="jobs-list" class="grid"></div>
+  </section>
+
+  <!-- ============ COMPANIES ============ -->
+  <section id="view-companies" class="view">
+    <div class="pagehead"><h1>Companies</h1><p>Browse companies, open their jobs, or create your own (recruiters).</p></div>
+    <div class="card" id="create-company-card" style="display:none">
+      <div class="toolbar-title">New company <span class="muted">POST /companies</span></div>
+      <div class="formgrid">
+        <input id="co-name" placeholder="Company name *" />
+        <input id="co-location" placeholder="Location" />
+        <input id="co-website" placeholder="Website (https://…)" />
+        <textarea id="co-desc" placeholder="Description"></textarea>
+      </div>
+      <button class="primary" onclick="createCompany()">Create company</button>
+    </div>
+    <div class="card" id="my-companies-card" style="display:none">
+      <div class="toolbar-title">My companies <span class="muted">GET /companies/me</span></div>
+      <div id="my-companies-list"></div>
+    </div>
+    <div class="toolbar-title">All companies <span class="muted">GET /companies</span></div>
+    <div id="companies-list" class="grid"></div>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section id="view-dashboard" class="view">
+    <div class="pagehead"><h1 id="dash-title">Dashboard</h1><p id="dash-sub">Applications, jobs and applicants at a glance.</p></div>
+    <div id="dash-stats" class="statrow"></div>
+
+    <!-- seeker -->
+    <div id="dash-seeker">
+      <div class="card">
+        <div class="toolbar-title">My applications <span class="muted">GET /applications/me</span></div>
+        <button class="ghost" onclick="loadMyApps()">Refresh</button>
+        <div id="myapps-list"></div>
+      </div>
+    </div>
+
+    <!-- recruiter -->
+    <div id="dash-recruiter" style="display:none">
+      <div class="card" id="rc-status-card" style="display:none">
+        <div class="toolbar-title">Recruiter status <span class="muted">GET /recruiter/status · POST /recruiter/apply</span></div>
+        <div id="rc-status-text" class="muted"></div>
+        <div class="formgrid" style="margin-top:8px">
+          <input id="rc-company" placeholder="Company / organization name" />
+          <textarea id="rc-message" placeholder="Why do you need recruiter access?"></textarea>
+        </div>
+        <button class="primary" onclick="submitRecruiterApplication()">Submit for approval</button>
+      </div>
+      <div class="grid2" id="hire-actions">
+        <div class="card">
+          <div class="toolbar-title">Post a job <span class="muted">POST /jobs</span></div>
+          <select id="job-company"></select>
+          <input id="job-title" placeholder="Job title *" />
+          <textarea id="job-desc" placeholder="Description (min 10 chars) *"></textarea>
+          <div class="formgrid2">
+            <input id="job-location" placeholder="Location" />
+            <select id="job-type">
+              <option value="full_time">Full-time</option>
+              <option value="part_time">Part-time</option>
+              <option value="contract">Contract</option>
+              <option value="internship">Internship</option>
+              <option value="remote">Remote</option>
+            </select>
+          </div>
+          <button class="primary" onclick="postJob()">Publish job</button>
+        </div>
+        <div class="card">
+          <div class="toolbar-title">Applicants <span class="muted">/companies/{id}/applicants · /jobs/{id}/applications</span></div>
+          <div class="formgrid2">
+            <select id="app-company"></select>
+            <select id="app-status">
+              <option value="">All statuses</option>
+              <option value="applied">applied</option>
+              <option value="shortlisted">shortlisted</option>
+              <option value="rejected">rejected</option>
+              <option value="hired">hired</option>
+            </select>
+          </div>
+          <div class="row">
+            <button class="primary" onclick="loadApplicants()">By company</button>
+            <button class="ghost" onclick="loadJobApplicants()">By job</button>
+          </div>
+          <div class="formgrid2" style="margin-top:8px">
+            <input id="app-jobid" type="number" placeholder="Job ID for 'By job'" />
+            <span class="muted">GET /jobs/{id}/applications</span>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="hire-results"><div class="toolbar-title">Applicant results <span class="muted">PATCH /applications/{id}/status</span></div><div id="applicants-list"></div></div>
+      <div class="card" id="hire-jobs">
+        <div class="toolbar-title">My jobs <span class="muted">PUT / DELETE /jobs/{id}</span></div>
+        <div id="myjobs-list"></div>
+      </div>
+      <div class="card" id="admin-card" style="display:none">
+        <div class="toolbar-title">Recruiter approvals <span class="muted">GET /admin/applications · PATCH /admin/applications/{id}</span></div>
+        <div class="formgrid2">
+          <select id="admin-filter">
+            <option value="pending">pending</option>
+            <option value="">all</option>
+            <option value="approved">approved</option>
+            <option value="rejected">rejected</option>
+          </select>
+          <button class="ghost" onclick="loadPendingApplications()">Refresh</button>
+        </div>
+        <div id="pending-list" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROFILE ============ -->
+  <section id="view-profile" class="view">
+    <div class="pagehead"><h1>Profile</h1><p>View and edit your profile, upload your resume.</p></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="toolbar-title">My profile <span class="muted">GET /users/me · PUT /users/me</span></div>
+        <div class="profilehead"><div class="avatar" id="pf-avatar">?</div><div><div id="pf-headname" class="bigname">—</div><div id="pf-headrole" class="muted">—</div></div></div>
+        <input id="pf-name" placeholder="Name" />
+        <div class="formgrid2">
+          <input id="pf-phone" placeholder="Phone" />
+          <input id="pf-skills" placeholder="Skills (comma separated)" />
+        </div>
+        <textarea id="pf-bio" placeholder="Bio"></textarea>
+        <button class="primary" onclick="updateProfile()">Save profile</button>
+        <details><summary>Raw JSON</summary><pre id="profile-pre">Not logged in</pre></details>
+      </div>
+      <div class="card">
+        <div class="toolbar-title">Resume <span class="muted">POST /users/me/resume</span></div>
+        <p class="muted">PDF / DOC / DOCX · max 5 MB. Saved to your profile and attached to future applications.</p>
+        <input type="file" id="resume-file" accept=".pdf,.doc,.docx" />
+        <button class="primary" onclick="uploadResume()">Upload resume</button>
+        <div id="resume-info" class="muted"></div>
+        <hr />
+        <div class="toolbar-title">Session</div>
+        <button class="danger" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ AUTH ============ -->
+  <section id="view-auth" class="view">
+    <div class="pagehead"><h1>Welcome</h1><p>Register as a job seeker to apply, or as a recruiter to post jobs. Recruiter accounts need admin approval before posting.</p></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="toolbar-title">Login <span class="muted">POST /users/login</span></div>
+        <input id="login-email" placeholder="Email" />
+        <input id="login-pass" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')login()" />
+        <div class="row">
+          <button class="primary" onclick="login()">Login</button>
+          <button class="ghost" onclick="logout()">Logout</button>
+        </div>
+        <hr />
+        <div class="muted">New here? Create an account to apply or hire.</div>
+        <button class="ghost" id="register-toggle" onclick="toggleRegister()">Register</button>
+        <div id="register-form" style="display:none">
+          <div class="toolbar-title" style="margin-top:12px">Register <span class="muted">POST /users/register</span></div>
+          <input id="reg-name" placeholder="Full name" />
+          <input id="reg-email" placeholder="Email" />
+          <input id="reg-pass" type="password" placeholder="Password (min 6 chars)" />
+          <label class="muted">Role</label>
+          <select id="reg-role"><option value="job_seeker">Job Seeker — apply to jobs</option><option value="recruiter">Recruiter — hire &amp; manage</option></select>
+          <button class="primary" onclick="register()">Create account</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="toolbar-title">Admin login <span class="muted">POST /users/login (admins only)</span></div>
+        <input id="admin-login-email" placeholder="Admin email" />
+        <input id="admin-login-pass" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')adminLogin()" />
+        <button class="primary" onclick="adminLogin()">Login as admin</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toast"></div>
+<div class="footer">Arasan Hire · API docs at <a href="/docs">/docs</a></div>
+<div id="modal" class="modal" style="display:none"><div class="modal-body card" id="modal-body"></div></div>
+
+<script src="app.js?v=7"></script>
+</body>
+</html>
